@@ -1,0 +1,58 @@
+/*
+* @Author: ryan
+* @Date:   2016-09-20 13:57:58
+* @Last Modified by:   Ryan Kophs
+* @Last Modified time: 2016-09-20 15:27:08
+*/
+
+body {
+	padding: 10px;
+}
+
+h1,h2,h3 {
+	margin: 0 0 10px 0;
+}
+
+p {
+	margin: 0 0 5px 0;
+	font-size: 14px;
+}
+
+input {
+	font-size: 14px;
+}
+
+#main, #sidebar, #right {
+	float: left;
+}
+
+.field_group p {
+	width: 220px;
+}
+
+.field_group input {
+	width: 100px;
+}
+
+.field_group p, input {
+	float: left;
+	margin: 0 10px 0 5px;
+}
+
+#controls, #results, #main {
+	margin: 5px;
+	border: 5px solid green;
+	padding: 5px;
+}
+
+#results .output {
+	font-family: "Courier New", Courier, monospace;
+	font-size: 12px;
+}
+
+#results {
+	white-space: nowrap;
+	width: 400px;
+	height: 400px;
+	overflow: scroll;
+}
