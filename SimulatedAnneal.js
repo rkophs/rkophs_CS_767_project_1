@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 18:21:23
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 12:35:23
+* @Last Modified time: 2016-09-20 12:47:27
 */
 
 'use strict';
@@ -12,7 +12,7 @@
 *   arbitrary problem domain space. Algorithm follows the structure and
 *   format descripted in https://en.wikipedia.org/wiki/Simulated_annealing
 *
-* Specifically, contains a run(Neighbor, P, E, s_init) function which
+* Specifically, contains a run(Neighbor, P, E, sInit) function which
 *   incrementally decreases a temperature, t, by a defined amount, alpha,
 *   until the temperature reaches a defined limit, t_min. During each
 *   iteration, k steps are performed. During each step: 
