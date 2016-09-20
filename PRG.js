@@ -2,14 +2,23 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 19:31:28
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-19 17:31:25
-*
-* Complementary Multiply-With-Carry of lag 1. Similar to Chrome's V8 Math.random implementation.
-* Inspired by https://gist.github.com/Protonk/5367430 
+* @Last Modified time: 2016-09-20 12:40:04
 */
 
 'use strict';
 
+/*
+* A pseduo random generator using Complementary Multiply-With-Carry of lag 1. 
+* It is necessary to use this rather than Math.Random(), because that is
+* implemented differently in each browser, rending different results.
+*
+* Inspired by https://gist.github.com/Protonk/5367430 and similar to Chrome's
+* V8 implementation
+*
+* Should be primed with a seed, defined by two integers:
+*   m: Multiply-With-Carry m-seed
+*   c: Multiply-With-Carry c-seed
+*/
 window.PRG = function() {
 
 	var mwc = (function() {

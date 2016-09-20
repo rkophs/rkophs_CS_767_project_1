@@ -1,134 +1,180 @@
 /*
-* @Author: ryan
+* @Author: Ryan Kophs
 * @Date:   2016-09-18 23:39:08
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-19 19:17:44
+* @Last Modified time: 2016-09-20 12:00:58
 */
 
 'use strict';
 
+/*
+* Description: Renders a 3D animation of a series of points, represented as small red cubes.
+*/
 window.Chart = function(elementId) {
 
-	var projectX = function(px, pz, cx, cz){
-	    return (cz * (px-cx)/(pz+cz)) + cx;
+	/*
+	* Project a 3d coordinate onto the X position of a 2d pixel screen.
+	* @Params:
+	*   point: 3d coordinate represented as an array of length 3
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*/
+	var pX = function(point, camera, scale) {
+		return ((camera[2]*(point[0]-camera[0])/(point[2]+camera[2])) + camera[0]) * scale;
 	};
 
-	var projectY = function(py, pz, cy, cz){
-	    return (cz * (py-cy)/(pz+cz)) + cy;
+	/*
+	* Project a 3d coordinate onto the Y position of a 2d pixel screen.
+	* @Params:
+	*   point: 3d coordinate represented as an array of length 3
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*/
+	var pY = function(point, camera, scale) {
+		return -1*((camera[2]*(point[1]-camera[1])/(point[2]+camera[2])) + camera[1]) * scale;
 	};
 
-	var pX = function(p, c, s) {
-		return ((c[2]*(p[0]-c[0])/(p[2]+c[2])) + c[0]) * s;
-	};
-
-	var pY = function(p, c, s) {
-		return -1*((c[2]*(p[1]-c[1])/(p[2]+c[2])) + c[1]) * s;
-	};
-
-	var drawLine = function(context, a, b, c, s) {
+	/*
+	* Draw a line between two coordinates onto the canvas element
+	* @Params:
+	*   context: HTML canvas context
+	*   x1: first coordinate
+	*   x2: second coordinate
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*/
+	var drawEdge = function(context, x1, x2, camera, scale) {
 		context.beginPath();
-        context.moveTo(pX(a, c, s), pY(a, c, s));
-        context.lineTo(pX(b, c, s), pY(b, c, s));
-        context.stroke();
+		context.moveTo(pX(x1, camera, scale), pY(x1, camera, scale));
+		context.lineTo(pX(x2, camera, scale), pY(x2, camera, scale));
+		context.stroke();
 	};
 
-	var drawPoly = function(context, points, c, f, s) {
-		context.fillStyle = f;
+	/*
+	* Draw a solid polygon given an input array of vertices
+	* @Params:
+	*   context: HTML canvas context
+	*   points: array of 3d vertices that define the polygon
+	*   camera: 3d camera position represented as an array of length 3
+	*   fill: RGB color of polygon
+	*   scale: double value used to convert coordinate into unit vector
+	*/
+	var drawPolygon = function(context, points, camera, fill, scale) {
+		context.fillStyle = fill;
 		context.beginPath();
-        context.moveTo(pX(points[0], c, s), pY(points[0], c, s));
-        var i;
-        for(i = 1; i < points.length; i++) {
-        	context.lineTo(pX(points[i], c, s), pY(points[i], c, s));
-        }
-        context.closePath();
-        context.fill();
+		context.moveTo(pX(points[0], camera, scale), pY(points[0], camera, scale));
+		for(var i = 1; i < points.length; i++) {
+			context.lineTo(pX(points[i], camera, scale), pY(points[i], camera, scale));
+		}
+		context.closePath();
+		context.fill();
 	}
 
-	var drawCube = function(context, p, camera, s, color_it, cubeSize) {
-		var colors = [
-			['#600', '#f00', '#a00'],
-			['#660', '#ff0', '#aa0'],
-			['#060', '#0f0', '#0a0'],
-			['#066', '#0ff', '#0aa'],
-			['#006', '#00f', '#00a'],
-		];
+	/*
+	* Draw a solid cube given an input center of mass
+	* @Params:
+	*   context: HTML canvas context
+	*   center: 3d coordinate for the center of the cube (i.e. center of mass)
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*   shade: double value representing how dark the cube should be
+	*   cubeSize: double value representing half of the length of one of the cube edges
+	*/
+	var drawCube = function(context, center, camera, scale, shade, cubeSize) {
 
-		var c1 = "rgb(" + Math.floor(220*color_it) + ",0,0)";
-		var c2 = "rgb(" + Math.floor(255*color_it) + ",0,0)";
-		var c3 = "rgb(" + Math.floor(200*color_it) + ",0,0)";
+		var color1 = "rgb(" + Math.floor(220*shade) + ",0,0)";
+		var color2 = "rgb(" + Math.floor(255*shade) + ",0,0)";
+		var color3 = "rgb(" + Math.floor(200*shade) + ",0,0)";
 
 		var corners = [
-			[p[0]-cubeSize,p[1]+cubeSize,p[2]-cubeSize],
-			[p[0]-cubeSize,p[1]-cubeSize,p[2]-cubeSize],
-			[p[0]+cubeSize,p[1]-cubeSize,p[2]-cubeSize],
-			[p[0]+cubeSize,p[1]+cubeSize,p[2]-cubeSize],
-			[p[0]-cubeSize,p[1]+cubeSize,p[2]+cubeSize],
-			[p[0]-cubeSize,p[1]-cubeSize,p[2]+cubeSize],
-			[p[0]+cubeSize,p[1]-cubeSize,p[2]+cubeSize],
-			[p[0]+cubeSize,p[1]+cubeSize,p[2]+cubeSize]
+			[center[0]-cubeSize, center[1]+cubeSize, center[2]-cubeSize],
+			[center[0]-cubeSize, center[1]-cubeSize, center[2]-cubeSize],
+			[center[0]+cubeSize, center[1]-cubeSize, center[2]-cubeSize],
+			[center[0]+cubeSize, center[1]+cubeSize, center[2]-cubeSize],
+			[center[0]-cubeSize, center[1]+cubeSize, center[2]+cubeSize],
+			[center[0]-cubeSize, center[1]-cubeSize, center[2]+cubeSize],
+			[center[0]+cubeSize, center[1]-cubeSize, center[2]+cubeSize],
+			[center[0]+cubeSize, center[1]+cubeSize, center[2]+cubeSize]
 		];
-
-		/*Cube*/
-		var cit = color_it % colors.length;
-		drawPoly(context, [corners[4], corners[5], corners[6], corners[7]], camera, c1, s);
-		drawPoly(context, [corners[0], corners[4], corners[7], corners[3]], camera, c2, s);
-		drawPoly(context, [corners[6], corners[7], corners[3], corners[2]], camera, c3, s);
+		drawPolygon(context, [corners[4], corners[5], corners[6], corners[7]], camera, color1, scale);
+		drawPolygon(context, [corners[0], corners[4], corners[7], corners[3]], camera, color2, scale);
+		drawPolygon(context, [corners[6], corners[7], corners[3], corners[2]], camera, color3, scale);
 	}
 
-	var drawShadows = function(context, p, c, s, cubeSize) {
-		var shadowCorners = [
-			[p[0]-cubeSize,-1,p[2]-cubeSize],
-			[p[0]-cubeSize,-1,p[2]+cubeSize],
-			[p[0]+cubeSize,-1,p[2]+cubeSize],
-			[p[0]+cubeSize,-1,p[2]-cubeSize]
+	/*
+	* Draw a shadow on the floor of the chart for a cube defined by its center
+	* @Params:
+	*   context: HTML canvas context
+	*   center: 3d coordinate for the center of the cube (i.e. center of mass)
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*   cubeSize: double value representing half of the length of one of the cube edges
+	*/
+	var drawCubeShadows = function(context, center, camera, scale, cubeSize) {
+		var corners = [
+			[center[0]-cubeSize, -1, center[2]-cubeSize],
+			[center[0]-cubeSize, -1, center[2]+cubeSize],
+			[center[0]+cubeSize, -1, center[2]+cubeSize],
+			[center[0]+cubeSize, -1, center[2]-cubeSize]
 		];
-
-		/*Shadow*/
-		drawPoly(context, [shadowCorners[0], shadowCorners[1], shadowCorners[2], shadowCorners[3]], c, '#666', s);
+		drawPolygon(context, [corners[0], corners[1], corners[2], corners[3]], camera, '#666', scale);
 	}
 
-	var drawBoxHalf = function(context, c, s, first) {
+	/*
+	* Draw either the back or front half of the chart's box perimeter edges.
+	* @Params:
+	*   context: HTML canvas context
+	*   camera: 3d camera position represented as an array of length 3
+	*   scale: double value used to convert coordinate into unit vector
+	*   backEdge: boolean representing whether to render the back half of the box
+	*/
+	var drawBoxHalf = function(context, camera, scale, backEdge) {
 		context.lineWidth = 1;
 		context.strokeStyle = '#777';
 		var corners = [
 			[-1,-1,-1],
-			[-1,1,-1],
-			[1,1,-1],
-			[1,-1,-1],
-			[-1,-1,1],
-			[-1,1,1],
-			[1,1,1],
-			[1,-1,1],
+			[-1, 1,-1],
+			[ 1, 1,-1],
+			[ 1,-1,-1],
+			[-1,-1, 1],
+			[-1, 1, 1],
+			[ 1, 1, 1],
+			[ 1,-1, 1]
 		];
 
-		var lines;
-		if (first) {
-			lines = [
+		var edges;
+		if (backEdge) {
+			edges = [
 				[corners[0], corners[1]],
 				[corners[1], corners[2]],
 				[corners[2], corners[3]],
 				[corners[3], corners[0]],
 				[corners[0], corners[4]],
 				[corners[1], corners[5]],
-				[corners[4], corners[5]],
+				[corners[4], corners[5]]
 			];
 		} else {
-			lines = [
+			edges = [
 				[corners[5], corners[6]],
 				[corners[6], corners[7]],
 				[corners[7], corners[4]],
 				[corners[2], corners[6]],
-				[corners[3], corners[7]],
+				[corners[3], corners[7]]
 			];
 		}
 
-		for (var i in lines) {
-			drawLine(context, lines[i][0], lines[i][1], c, s);
+		for (var i in edges) {
+			drawEdge(context, edges[i][0], edges[i][1], camera, scale);
 		}
-
 		context.strokeStyle = 'none';
 	}
 
+	/*
+	* Erase any rendered graphics on the HTML canvas element
+	* @Params:
+	*   context: HTML canvas context
+	*   canvas: HTML canvas
+	*/
 	var clear = function(context, canvas) {
 		context.save();
 		context.setTransform(1, 0, 0, 1, 0, 0);
@@ -136,40 +182,37 @@ window.Chart = function(elementId) {
 		context.restore();
 	}
 
+	/* Beginning of JS class constructor; if already instantiated: */
 	if (this instanceof Chart) {
 
+		/* get canvas, canvas context, and reposition to center of canvas */
 		var canvas = document.getElementById(elementId);
-		var size = canvas.width / 4 ;
-		var camera = [2, 2, -7];
-
 		var context = canvas.getContext('2d');
 		context.translate(canvas.width / 1.8, canvas.height / 2.2);
+		
+		/* animation scale and camera position*/
+		var scale = canvas.width / 4 ;
+		var camera = [2, 2, -7];
 
+		/* clear anything on the canvas and draw empty box perimiter*/
 		clear(context, canvas);
+		drawBoxHalf(context, camera, scale, true);
+		drawBoxHalf(context, camera, scale, false);
 
-		drawBoxHalf(context, camera, size, true);
-		drawBoxHalf(context, camera, size, false);
-
-		context.save();
-
-		this.plotPoints = function(points, scale) {
-			var canvas = document.getElementById(elementId);
-			var context = canvas.getContext('2d');
-			//context.translate(canvas.width / 1.8, canvas.height / 2.2);
-			var size = canvas.width / 4 ;
-
+		/*
+		* plotPoints accepts an array of box locations/colors and renders
+		*   them to the screen.
+		* @Params
+		*   boxes: array of box objects containing box center and color
+		*/
+		this.plotBoxes = function(boxes) {
 			clear(context, canvas);
-			drawBoxHalf(context, camera, size, true);
-			for (var i = points.length - 1; i >= 0; i--) {
-				var point = [points[i].point[0]*scale, points[i].point[1]*scale, points[i].point[2]*scale];
-				var color = points[i].color_it;
-				var point_size = points[i].point_size;
-				drawShadows(context, point, camera, size, 0.03);
-				drawCube(context, point, camera, size, point_size, 0.04);
+			drawBoxHalf(context, camera, scale, true);
+			for (var i = boxes.length - 1; i >= 0; i--) {
+				drawCubeShadows(context, boxes[i].point, camera, scale, 0.03);
+				drawCube(context, boxes[i].point, camera, scale, boxes[i].color_it, 0.04);
 			};
-			drawBoxHalf(context, camera, size, false);
-
-			context.save();
+			drawBoxHalf(context, camera, scale, false);
 		};
 
 	} else {

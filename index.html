@@ -1,75 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>Algorithms Meetup -- Simulated Annealing Test Suite [Mocha]</title>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <script src="PRG.js"></script>
-        <script src="SimulatedAnneal.js"></script>
-        <script src="MinSumOfSquares.js"></script>
-        <script src="Chart.js"></script>
+	<head>
+		<title>Algorithms Meetup -- Simulated Annealing Test Suite [Mocha]</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script src="PRG.js"></script>
+		<script src="SimulatedAnneal.js"></script>
+		<script src="MinSumOfSquares.js"></script>
+		<script src="Chart.js"></script>
 
-        <script>
-            onload = function(){
-                runner = new MinSumOfSquares();
-                runner.init({
-                    prg: {
-                        seed_m: 2349871, 
-                        seed_c: 93719033
-                    },
-                    sa: {
-                        t: 1,
-                        t_min: 0.00001,
-                        alpha: 0.9,
-                        k: 100
-                    }
-                });
-                var result = runner.run();
-                var point_size = 1;
+		<script>
 
-                var history = runner.getHistory();
-                var chart = new Chart("chart");
+			var generateBoxInfo = function(point, color) {
+				return {
+					point: [point[0] * 0.1, point[1] * 0.1, point[2] * 0.1], 
+					color_it: color,
+				};
+			};
 
-                var i = 0;
-                var color_it = 0;
-                var last_t = history[0].t;
-                var steps = [{
-                    point: history[0].s, 
-                    color_it: color_it,
-                    point_size: point_size
-                }];
-                var plotPoint = function() {
-                    if (i >= history.length){
-                        return;
-                    }
+			onload = function(){
+				runner = new MinSumOfSquares();
+				runner.init({
+					prg: {
+						seed_m: 2349871, 
+						seed_c: 93719033
+					},
+					sa: {
+						t: 1,
+						t_min: 0.00001,
+						alpha: 0.9,
+						k: 100
+					}
+				});
+				var result = runner.run();
+				var history = runner.getHistory();
+				var chart = new Chart("chart");
 
-                    if (history[i].t != last_t) {
-                        last_t = history[i].t;
-                        color_it++;
-                        point_size *= 0.9;
-                        steps.push({
-                            point: history[i].s, 
-                            color_it: color_it,
-                            point_size: point_size
-                        });
-                    } else {
-                        steps[steps.length - 1] = {
-                            point: history[i].s, 
-                            color_it: color_it,
-                            point_size: point_size
-                        };
-                    }
+				var i = 0;
+				var color_it = 1;
+				var last_t = history[0].t;
+				var steps = [{
+					point: history[0].s, 
+					color_it: color_it,
+				}];
 
-                    chart.plotPoints(steps, 0.1);
-                    setTimeout(plotPoint, 1);
-                    i++;
-                }
-                plotPoint();
-            };
-        </script>
-    </head>
-    <body>
-        <h1>Hello World</h1>
-        <img src="axis.png" >
-        <canvas id="chart" width="500" height="400" style="border:1px solid #d3d3d3;" >
-    </body>
+				var plotPoint = function() {
+					if (i >= history.length){
+						return;
+					}
+
+					if (history[i].t != last_t) {
+						last_t = history[i].t;
+						color_it *= 0.9;
+						steps.push(generateBoxInfo(history[i].s, color_it));
+					} else {
+						steps[steps.length - 1] = generateBoxInfo(history[i].s, color_it)
+					}
+
+					chart.plotBoxes(steps);
+					setTimeout(plotPoint, 1);
+					i++;
+				}
+				plotPoint();
+			};
+		</script>
+	</head>
+	<body>
+		<h1>Hello World</h1>
+		<img src="axis.png" >
+		<canvas id="chart" width="500" height="400" style="border:1px solid #d3d3d3;" >
+	</body>
 </html>

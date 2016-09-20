@@ -1,24 +1,24 @@
 /*
-* @Author: ryan
+* @Author: Ryan Kophs
 * @Date:   2016-09-18 18:22:12
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-19 17:30:59
+* @Last Modified time: 2016-09-20 12:03:42
 */
 
 'use strict';
 
 /*** Initialization options ***
 {
-    prg: {
-        seed_m: <int>, 
-        seed_c: <int>
-    },
-    sa: {
-        t: <double>,
-        t_min: <double>,
-        alpha: <double>,
-        k: <int>
-    }
+	prg: {
+		seed_m: <int>, 
+		seed_c: <int>
+	},
+	sa: {
+		t: <double>,
+		t_min: <double>,
+		alpha: <double>,
+		k: <int>
+	}
 }
 ***/
 
@@ -26,18 +26,18 @@ window.MinSumOfSquares = function(options){
 	var max = Math.pow(2, 32);
 	var prg, sa;
 
-    var init = function(options) {
-    	options = options || {};
+	var init = function(options) {
+		options = options || {};
 
-    	var m = 4009412866;
-    	var c = 3943122055;
-    	options.prg = options.prg || {seed_m: m, seed_c: c};
+		var m = 4009412866;
+		var c = 3943122055;
+		options.prg = options.prg || {seed_m: m, seed_c: c};
 
 		prg = new PRG();
 		prg.init(options.prg.seed_c, options.prg.seed_m);
 
 		sa = new SA(options);
-    };
+	};
 
 	var f = function(x1, x2, x3) {
 		return x1*x1 + x2*x2 + x3*x3;
