@@ -3,12 +3,52 @@
 	<head>
 		<title>Algorithms Meetup -- Simulated Annealing Test Suite [Mocha]</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" type="text/css" href="style/normalize.css">
+		<link rel="stylesheet" type="text/css" href="style/style.css">
 		<script src="PRG.js"></script>
 		<script src="SimulatedAnneal.js"></script>
 		<script src="MinSumOfSquares.js"></script>
 		<script src="Chart.js"></script>
 
 		<script>
+
+			var getFreshElementById = function(name, clear) {
+				var dom = document.getElementById(name);
+				if (clear) {
+					while (dom.firstChild) {
+    					dom.removeChild(dom.firstChild);
+					}
+				}
+				return dom;
+			}
+
+			var buildPElement = function(parentId, content, clear){
+				var p = document.createElement("p"); 
+				p.className = "output";
+				var content = document.createTextNode(content);
+				p.appendChild(content);
+				var parent = getFreshElementById(parentId, clear);
+				parent.appendChild(p);
+			}
+
+			var createStateString = function(s) {
+				var x_1 = s[0].toPrecision(3);
+				var x_2 = s[1].toPrecision(3);
+				var x_3 = s[2].toPrecision(3);
+				return "(x_1, x_2, x_3): (" + x_1 + ", " + x_2 + ", " + x_3 + ")";
+			} 
+
+			var updateResults = function(results) {
+				buildPElement("resultStateBox", createStateString(results.result), true);
+				buildPElement("resultTCountBox", "temperature (t) changes: " + results.t_count, true);
+			};
+
+			var updateStepResult = function(step) {
+				var t = step.t.toPrecision(3);
+				var e = step.e.toPrecision(3);
+				var s = createStateString(step.s);
+				buildPElement("resultStepsBox", "t: " + t + ", e: " + e + ", " + s, false);
+			}
 
 			var generateBoxInfo = function(point, color) {
 				return {
@@ -17,7 +57,7 @@
 				};
 			};
 
-			onload = function(){
+			var calculate = function() {
 				runner = new MinSumOfSquares();
 				runner.init({
 					prg: {
@@ -31,10 +71,14 @@
 						k: 100
 					}
 				});
-				var result = runner.run();
-				var history = runner.getHistory();
-				var chart = new Chart("chart");
+				return runner.run();
+			}
 
+			onload = function(){
+				var result = calculate();
+				var history = result.history;
+
+				var chart = new Chart("chart");
 				var i = 0;
 				var color_it = 1;
 				var last_t = history[0].t;
@@ -44,9 +88,12 @@
 				}];
 
 				console.log(result);
+				updateResults(result);
+				//updateStepResult(history[0]);
 
 				var plotPoint = function() {
 					if (i >= history.length){
+						updateStepResult(history[i-1]);
 						return;
 					}
 
@@ -54,6 +101,7 @@
 						last_t = history[i].t;
 						color_it *= 0.9;
 						steps.push(generateBoxInfo(history[i].s, color_it));
+						updateStepResult(history[i-1]);
 					} else {
 						steps[steps.length - 1] = generateBoxInfo(history[i].s, color_it)
 					}
@@ -67,8 +115,56 @@
 		</script>
 	</head>
 	<body>
-		<h1>Hello World</h1>
-		<img src="axis.png" >
-		<canvas id="chart" width="500" height="400" style="border:1px solid #d3d3d3;" >
+		<h2>MET CS 767 - Machine Learning</h2>
+		<h3>Project #1: Simulated Annealing</h3>
+		<p>Author: <em>Ryan Kophs</em></p>
+		<p>Date: <em>20 September 2016</em></p>
+		<div id="sidebar">
+			<div id="controls">
+				<p><em>Configuration</em></p>
+				<form id="controlsForm">
+					<div class="field_group">
+						<p class="field_name">PRG m-seed:</p>
+						<input type="text" name="mSeed" value="2349871">
+					</div>
+					<div class="field_group">
+						<p class="field_name">PRG c-seed:</p>
+						<input type="text" name="cSeed" value="93719033">
+					</div>
+					<div class="field_group">
+						<p class="field_name">Initial Temperature (t): </p>
+						<input type="text" name="t" value="1">
+					</div>
+					<div class="field_group">
+						<p class="field_name">Temperature Limit (t_min): </p>
+						<input type="text" name="tMin" value="0.0001">
+					</div>
+					<div class="field_group">
+						<p class="field_name">Temperature Change (alpha): </p>
+						<input type="text" name="alpha" value="0.9">
+					</div>
+					<div class="field_group">
+						<p class="field_name">Steps per Iteration (k): </p>
+						<input type="text" name="k" value="100">
+					</div>
+					<div class="field_group">
+						<input class="submit" type="submit" value="Run">
+					</div>
+					<div style="clear:both"></div>
+				</form>
+			</div>
+			<div id="results">
+				<p><em>Results (Scrollable)</em></p>
+				<div id="resultStateBox"></div>
+				<div id="resultTCountBox"></div>
+				<div id="resultStepsBox"></div>
+			</div>
+		</div>
+		<div id="main">
+			<canvas id="chart" width="700" height="600">
+		</div>
+		<div id="right">
+			<img src="axis.png" width="150" height="150">
+		</div>
 	</body>
 </html>

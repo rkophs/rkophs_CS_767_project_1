@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 18:22:12
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 13:49:04
+* @Last Modified time: 2016-09-20 13:54:50
 */
 
 'use strict';
@@ -168,19 +168,10 @@ window.MinSumOfSquares = function(options) {
 		return sa.run(Neighbor, P, E, s_init);
 	}
 
-	/*
-	* Returns the history of all the local-best states witnessed 
-	*   thoughout each heuristic of each temperature cooling phase.
-	*/
-	var getHistory = function() {
-		return sa.getHistory();
-	}
-
 	/* Beginning of JS class constructor; if already instantiated: */
 	if (this instanceof MinSumOfSquares) {
 		this.init = init;
 		this.run = run;
-		this.getHistory = getHistory;
 		this.init(options);
 	} else {
 		return new MinSumOfSquares(options);

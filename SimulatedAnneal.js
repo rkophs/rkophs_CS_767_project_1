@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 18:21:23
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 12:47:27
+* @Last Modified time: 2016-09-20 13:54:53
 */
 
 'use strict';
@@ -89,14 +89,6 @@ window.SA = function(options){
 	}
 
 	/*
-	* Returns the history of all the local-best states witnessed 
-	*   thoughout each heuristic of each temperature cooling phase.
-	*/
-	var getHistory = function() {
-		return this.history;
-	}
-
-	/*
 	* Performs the SA algorithm as defined in the description above.
 	* @Params:
 	*   Neighbor: function callback used to generate a randomly-chosen
@@ -136,14 +128,13 @@ window.SA = function(options){
 			t *= alpha;
 			t_count++;
 		}
-		return {result: s, t_count: t_count};
+		return {result: s, t_count: t_count, history: this.history};
 	};
 
 	/* Beginning of JS class constructor; if already instantiated: */
 	if (this instanceof SA) {
 		this.prg = new PRG();
 		this.run = run;
-		this.getHistory = getHistory;
 		this.init = init;
 		this.init(options);
 	} else {
