@@ -12,6 +12,10 @@
 
 		<script>
 
+			var chart;
+			var waiting;
+			var lock;
+
 			var getFreshElementById = function(name, clear) {
 				var dom = document.getElementById(name);
 				if (clear) {
@@ -35,19 +39,20 @@
 				var x_1 = s[0].toPrecision(3);
 				var x_2 = s[1].toPrecision(3);
 				var x_3 = s[2].toPrecision(3);
-				return "(x_1, x_2, x_3): (" + x_1 + ", " + x_2 + ", " + x_3 + ")";
+				return "(x_{1, 2, 3}): (" + x_1 + ", " + x_2 + ", " + x_3 + ")";
 			} 
 
 			var updateResults = function(results) {
 				buildPElement("resultStateBox", createStateString(results.result), true);
-				buildPElement("resultTCountBox", "temperature (t) changes: " + results.t_count, true);
+				buildPElement("resultSMinBox", "min( f( x_{1, 2, 3} ) ): " + (results.e * 300).toPrecision(3), true);
+				buildPElement("resultTCountBox", "temperature (t) iterations: " + results.t_count, true);
 			};
 
 			var updateStepResult = function(step) {
 				var t = step.t.toPrecision(3);
 				var e = step.e.toPrecision(3);
 				var s = createStateString(step.s);
-				buildPElement("resultStepsBox", "t: " + t + ", e: " + e + ", " + s, false);
+				buildPElement("resultStepsBox", "* t: " + t + ", e: " + e + ", " + s, false);
 			}
 
 			var generateBoxInfo = function(point, color) {
@@ -57,43 +62,31 @@
 				};
 			};
 
-			var calculate = function() {
+			var calculate = function(options) {
 				runner = new MinSumOfSquares();
-				runner.init({
-					prg: {
-						seed_m: 2349871, 
-						seed_c: 93719033
-					},
-					sa: {
-						t: 1,
-						t_min: 0.0001,
-						alpha: 0.9,
-						k: 100
-					}
-				});
+				runner.init(options);
 				return runner.run();
 			}
 
-			onload = function(){
-				var result = calculate();
+			var run = function(options) {
+				lock = true;
+				var result = calculate(options);
 				var history = result.history;
+				updateResults(result);
 
-				var chart = new Chart("chart");
 				var i = 0;
 				var color_it = 1;
 				var last_t = history[0].t;
+				var delay = options.animation.delay;
 				var steps = [{
 					point: history[0].s, 
 					color_it: color_it,
 				}];
 
-				console.log(result);
-				updateResults(result);
-				//updateStepResult(history[0]);
-
 				var plotPoint = function() {
 					if (i >= history.length){
 						updateStepResult(history[i-1]);
+						lock = false;
 						return;
 					}
 
@@ -107,10 +100,68 @@
 					}
 
 					chart.plotBoxes(steps);
-					setTimeout(plotPoint, 1);
-					i++;
+
+					if (!waiting) {
+						i++;
+						setTimeout(plotPoint, delay);
+					} else {
+						lock = false;
+					}
 				}
 				plotPoint();
+			}
+
+			var wait = function(thenApply) {
+				waiting = true;
+				if (lock) {
+					setTimeout(function(){
+						wait(thenApply);
+					}, 10);
+				} else {
+					waiting = false;
+					thenApply();
+				}
+			}
+
+			var onSubmit = function(event) {
+				event.preventDefault();
+				var mSeed = parseInt(document.getElementById("mSeed_input").value);
+				var cSeed = parseInt(document.getElementById("cSeed_input").value);
+				var t = parseFloat(document.getElementById("t_input").value);
+				var tMin = parseFloat(document.getElementById("tMin_input").value);
+				var alpha = parseFloat(document.getElementById("alpha_input").value);
+				var k = parseInt(document.getElementById("k_input").value);
+				var delay = parseInt(document.getElementById("delay").value);
+
+				var options = {
+					prg: {
+						seed_m: mSeed, 
+						seed_c: cSeed
+					},
+					sa: {
+						t: t,
+						t_min: tMin,
+						alpha: alpha,
+						k: k
+					},
+					animation: {
+						delay: delay
+					}
+				}
+
+				wait(function() {
+					getFreshElementById("resultStateBox", true);
+					getFreshElementById("resultTCountBox", true);
+					getFreshElementById("resultStepsBox", true);
+					run(options);
+				});
+			}
+
+			onload = function(){
+				chart = new Chart("chart");
+				lock = false;
+				waiting = false;
+				document.addEventListener("submit", onSubmit);
 			};
 		</script>
 	</head>
@@ -125,27 +176,31 @@
 				<form id="controlsForm">
 					<div class="field_group">
 						<p class="field_name">PRG m-seed:</p>
-						<input type="text" name="mSeed" value="2349871">
+						<input type="text" id="mSeed_input" name="mSeed" value="2349871">
 					</div>
 					<div class="field_group">
 						<p class="field_name">PRG c-seed:</p>
-						<input type="text" name="cSeed" value="93719033">
+						<input type="text" id="cSeed_input" name="cSeed" value="93719033">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Initial Temperature (t): </p>
-						<input type="text" name="t" value="1">
+						<input type="text" id="t_input" name="t" value="1">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Temperature Limit (t_min): </p>
-						<input type="text" name="tMin" value="0.0001">
+						<input type="text" id="tMin_input" name="tMin" value="0.0001">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Temperature Change (alpha): </p>
-						<input type="text" name="alpha" value="0.9">
+						<input type="text" id="alpha_input" name="alpha" value="0.9">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Steps per Iteration (k): </p>
-						<input type="text" name="k" value="100">
+						<input type="text" id="k_input" name="k" value="100">
+					</div>
+					<div class="field_group">
+						<p class="field_name">Animation Delay (ms): </p>
+						<input type="text" id="delay" name="delay" value="1">
 					</div>
 					<div class="field_group">
 						<input class="submit" type="submit" value="Run">
@@ -156,6 +211,7 @@
 			<div id="results">
 				<p><em>Results (Scrollable)</em></p>
 				<div id="resultStateBox"></div>
+				<div id="resultSMinBox"></div>
 				<div id="resultTCountBox"></div>
 				<div id="resultStepsBox"></div>
 			</div>

@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 18:21:23
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 13:54:53
+* @Last Modified time: 2016-09-20 16:13:15
 */
 
 'use strict';
@@ -128,7 +128,7 @@ window.SA = function(options){
 			t *= alpha;
 			t_count++;
 		}
-		return {result: s, t_count: t_count, history: this.history};
+		return {result: s, e: e, t_count: t_count, history: this.history};
 	};
 
 	/* Beginning of JS class constructor; if already instantiated: */
