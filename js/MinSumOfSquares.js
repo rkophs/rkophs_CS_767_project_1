@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 18:22:12
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 16:12:23
+* @Last Modified time: 2016-09-22 20:38:40
 */
 
 'use strict';
@@ -30,14 +30,14 @@
 *     described as such:
 *		{
 *			prg: {
-*				seed_m: <int>,    -- Multiply-With-Carry m-seed
-*				seed_c: <int>     -- Multiply-With-Carry c-seed
+*				seed: <int>,      -- pseudorandom generator seed
 *			},
 *			sa: {
 *				t: <double>,      -- initial temperature
 *				t_min: <double>,  -- temperature cooling limit
 *				alpha: <double>,  -- rate of temperature cooling
 *				k: <int>          -- number steps in SA heuristic
+*				sweep: <int>      -- number of sweeps in a step
 *			}
 *		}
 */
@@ -57,13 +57,11 @@ window.MinSumOfSquares = function(options) {
 	*/
 	var init = function(options) {
 		options = options || {};
-
-		var m = 4009412866;
-		var c = 3943122055;
-		options.prg = options.prg || {seed_m: m, seed_c: c};
+		var seed = 4009412866;
+		options.prg = options.prg || {seed: seed};
 
 		prg = new PRG();
-		prg.init(options.prg.seed_c, options.prg.seed_m);
+		prg.init(options.prg.seed);
 
 		sa = new SA(options);
 	};
@@ -162,6 +160,8 @@ window.MinSumOfSquares = function(options) {
 	* performing the SA algorithm defined in SimulatedAnneal.js
 	* using the problem domain-specific Neighbor, P, and E 
 	* callbacks and s_init.
+	*
+	* Executes a single run of the algorithm with multiple sweepts.
 	*/
 	var run = function() {
 		var s_init = [randomX(), randomX(), randomX()];

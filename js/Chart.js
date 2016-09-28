@@ -2,7 +2,7 @@
 * @Author: Ryan Kophs
 * @Date:   2016-09-18 23:39:08
 * @Last Modified by:   Ryan Kophs
-* @Last Modified time: 2016-09-20 12:00:58
+* @Last Modified time: 2016-09-22 19:37:48
 */
 
 'use strict';
@@ -209,8 +209,8 @@ window.Chart = function(elementId) {
 			clear(context, canvas);
 			drawBoxHalf(context, camera, scale, true);
 			for (var i = boxes.length - 1; i >= 0; i--) {
-				drawCubeShadows(context, boxes[i].point, camera, scale, 0.03);
-				drawCube(context, boxes[i].point, camera, scale, boxes[i].color_it, 0.04);
+				drawCubeShadows(context, boxes[i].point, camera, scale, 0.008);
+				drawCube(context, boxes[i].point, camera, scale, boxes[i].color_it, 0.01);
 			};
 			drawBoxHalf(context, camera, scale, false);
 		};

@@ -5,6 +5,7 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<link rel="stylesheet" type="text/css" href="style/normalize.css">
 		<link rel="stylesheet" type="text/css" href="style/style.css">
+		<script src="lib/mersenne-twister.js"></script>
 		<script src="js/PRG.js"></script>
 		<script src="js/SimulatedAnneal.js"></script>
 		<script src="js/MinSumOfSquares.js"></script>
@@ -43,16 +44,27 @@
 			} 
 
 			var updateResults = function(results) {
-				buildPElement("resultStateBox", createStateString(results.result), true);
-				buildPElement("resultSMinBox", "min( f( x_{1, 2, 3} ) ): " + (results.e * 300).toPrecision(3), true);
-				buildPElement("resultTCountBox", "temperature (t) iterations: " + results.t_count, true);
+				var last = results[results.length - 1];
+				var min = last[0];
+				for (var i = 0; i < last.length; i++) {
+					if (last[i].e < min.e) {
+						min = last[i];
+					}
+				}
+				buildPElement("resultStateBox", createStateString(min.s), true);
+				buildPElement("resultSMinBox", "min( f( x_{1, 2, 3} ) ): " + (min.e * 300).toPrecision(3), true);
+				buildPElement("resultTCountBox", "temperature iterations: " + results.length);
 			};
 
-			var updateStepResult = function(step) {
-				var t = step.t.toPrecision(3);
-				var e = step.e.toPrecision(3);
-				var s = createStateString(step.s);
-				buildPElement("resultStepsBox", "* t: " + t + ", e: " + e + ", " + s, false);
+			var updateStepResult = function(results) {
+				for (var i = 0; i < results.length; i++) {
+					var sweep = results[i];
+					var t = sweep.t.toPrecision(3);
+					var e = sweep.e.toPrecision(3);
+					var s = createStateString(sweep.s);
+					var sweep = sweep.sweep;
+					buildPElement("resultStepsBox", "* t: " + t + ", sweep: " + sweep + ", e: " + e + ", " + s, false);
+				}
 			}
 
 			var generateBoxInfo = function(point, color) {
@@ -68,41 +80,58 @@
 				return runner.run();
 			}
 
+			var invertResults = function(results) {
+				var resultsByTime = [];
+				
+				var i, j;
+				for(i = 0; i < results.length; i++) {
+
+					var history = results[i].run_log.history;
+					var times = results[i].run_log.times;
+
+					for(j = 0; j < times.length; j++) {
+						if (resultsByTime.length <= j) {
+							resultsByTime.push([]);
+						}
+
+						var time = times[j];
+						var timeList = history[time];
+						if (timeList && timeList.length > 0) {
+							resultsByTime[j].push(timeList[timeList.length - 1]);
+						}
+					}
+				}
+				return resultsByTime;
+			}
+
 			var run = function(options) {
 				lock = true;
-				var result = calculate(options);
-				var history = result.history;
-				updateResults(result);
+				var sweepResults = calculate(options);
+				var results = invertResults(sweepResults);
+				updateResults(results);
 
 				var i = 0;
+				var stop = results.length;
 				var color_it = 1;
-				var last_t = history[0].t;
 				var delay = options.animation.delay;
-				var steps = [{
-					point: history[0].s, 
-					color_it: color_it,
-				}];
-
+				var steps = [];
 				var plotPoint = function() {
-					if (i >= history.length){
-						updateStepResult(history[i-1]);
+					if (i >= stop){
 						lock = false;
 						return;
 					}
 
-					if (history[i].t != last_t) {
-						last_t = history[i].t;
-						color_it *= 0.9;
-						steps.push(generateBoxInfo(history[i].s, color_it));
-						updateStepResult(history[i-1]);
-					} else {
-						steps[steps.length - 1] = generateBoxInfo(history[i].s, color_it)
+					updateStepResult(results[i])
+
+					for (var j = 0; j < results[i].length; j++) {
+						steps.push(generateBoxInfo(results[i][j].s, color_it));
 					}
 
+					color_it *= 0.9;
+					i++;
 					chart.plotBoxes(steps);
 
 					if (!waiting) {
-						i++;
 						setTimeout(plotPoint, delay);
 					} else {
 						lock = false;
@@ -125,29 +154,29 @@
 
 			var onSubmit = function(event) {
 				event.preventDefault();
-				var mSeed = parseInt(document.getElementById("mSeed_input").value);
-				var cSeed = parseInt(document.getElementById("cSeed_input").value);
+				var seed = parseInt(document.getElementById("seed_input").value);
 				var t = parseFloat(document.getElementById("t_input").value);
 				var tMin = parseFloat(document.getElementById("tMin_input").value);
 				var alpha = parseFloat(document.getElementById("alpha_input").value);
 				var k = parseInt(document.getElementById("k_input").value);
-				var delay = parseInt(document.getElementById("delay").value);
+				var delay = parseInt(document.getElementById("delay_input").value);
+				var sweep = parseInt(document.getElementById("sweep_input").value);
 
 				var options = {
 					prg: {
-						seed_m: mSeed, 
-						seed_c: cSeed
+						seed: seed
 					},
 					sa: {
 						t: t,
 						t_min: tMin,
 						alpha: alpha,
-						k: k
+						k: k,
+						sweep: sweep
 					},
 					animation: {
 						delay: delay
 					}
-				}
+				};
 
 				wait(function() {
 					getFreshElementById("resultStateBox", true);
@@ -170,17 +199,14 @@
 		<h3>Project #1: Simulated Annealing</h3>
 		<p>Author: <em>Ryan Kophs</em></p>
 		<p>Date: <em>20 September 2016</em></p>
+		<p><em>Calculate min(f(x1, x2, x3)) where -10 &lt;= x1, x2, x3 &lt;= 10. Each dimension of the animation has a domain: [-10, 10]. </em></p>
 		<div id="sidebar">
 			<div id="controls">
-				<p><em>Configuration</em></p>
+				<p><em>Configuration for a Single SA Run with Multiple Sweeps</em></p>
 				<form id="controlsForm">
 					<div class="field_group">
-						<p class="field_name">PRG m-seed:</p>
-						<input type="text" id="mSeed_input" name="mSeed" value="2319871">
-					</div>
-					<div class="field_group">
-						<p class="field_name">PRG c-seed:</p>
-						<input type="text" id="cSeed_input" name="cSeed" value="93717033">
+						<p class="field_name">PRG seed:</p>
+						<input type="text" id="seed_input" name="seed" value="14759809013">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Initial Temperature (t): </p>
@@ -188,19 +214,23 @@
 					</div>
 					<div class="field_group">
 						<p class="field_name">Temperature Limit (t_min): </p>
-						<input type="text" id="tMin_input" name="tMin" value="0.0001">
+						<input type="text" id="tMin_input" name="tMin" value="0.00001">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Temperature Change (alpha): </p>
-						<input type="text" id="alpha_input" name="alpha" value="0.9">
+						<input type="text" id="alpha_input" name="alpha" value="0.95">
 					</div>
 					<div class="field_group">
 						<p class="field_name">Steps per Iteration (k): </p>
 						<input type="text" id="k_input" name="k" value="100">
 					</div>
 					<div class="field_group">
+						<p class="field_name">Sweep Count per Run: </p>
+						<input type="text" id="sweep_input" name="sweet" value="25">
+					</div>
+					<div class="field_group">
 						<p class="field_name">Animation Delay (ms): </p>
-						<input type="text" id="delay" name="delay" value="1">
+						<input type="text" id="delay_input" name="delay" value="10">
 					</div>
 					<div class="field_group">
 						<input class="submit" type="submit" value="Run">
@@ -208,11 +238,14 @@
 					<div style="clear:both"></div>
 				</form>
 			</div>
-			<div id="results">
-				<p><em>Results (Scrollable)</em></p>
+			<div id="solution">
+				<p><em>Best Result for Single Run</em></p>
 				<div id="resultStateBox"></div>
 				<div id="resultSMinBox"></div>
 				<div id="resultTCountBox"></div>
+			</div>
+			<div id="results">
+				<p><em>Detailed Step Results for Single Run (Scrollable)</em></p>
 				<div id="resultStepsBox"></div>
 			</div>
 		</div>
